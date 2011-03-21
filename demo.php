@@ -4,4 +4,4 @@ require('url-shortener.php');
 
 $shortener = new Shortener();
 
-echo $shortener->get('test');
+echo $shortener->submit('test');

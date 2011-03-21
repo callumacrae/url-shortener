@@ -50,4 +50,35 @@ class Shortener
 			return $statement->url;
 		}
 	}
+	
+	public function submit($url)
+	{
+		if (!$this->config['unique'])
+		{
+			$statement = $this->db->prepare('SELECT s_key FROM ' . $this->config['table'] . ' WHERE url = ?');
+			$statement->execute(array($url));
+			if ($statement->rowCount())
+			{
+				$statement = $statement->fetchObject();
+				return $statement->s_key;
+			}
+		}
+		
+		/**
+		 * @todo Improve random string - there are other valid URl chars!
+		 */
+		$uniq_key = true;
+		$statement = $this->db->prepare('SELECT id FROM ' . $this->config['table'] . ' WHERE s_key = ?');
+		$key = substr(md5(uniqid(rand(), true)), 0, $this->config['length']);
+		$statement->execute(array($key));
+
+		while ($statement->rowCount() > 0)
+		{
+			$key = substr(md5(uniqid(rand(), true)), 0, $this->config['length']);
+			$statement->execute(array($key));
+		}
+		$statement = $this->db->prepare('INSERT INTO ' . $this->config['table'] . ' (s_key, url) VALUES (?, ?)');
+		$statement->execute(array($key, $url));
+		return $key;
+	}
 }
