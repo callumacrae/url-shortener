@@ -10,6 +10,7 @@ class Shortener
 {
 	private $db;
 	private $config;
+	private $prepared;
 
 	public function __construct(&$db = false, $table = false)
 	{
@@ -30,6 +31,8 @@ class Shortener
 			$this->db = new PDO($dsn, $this->config['user'], $this->config['pass']);
 		}
 		
+		$this->prepared = $this->db->prepare('SELECT url FROM ' . $this->config['table'] . ' WHERE s_key = ?');
+		
 		if ($table)
 		{
 			$this->config['table'] = $table;
@@ -38,13 +41,24 @@ class Shortener
 	
 	public function get($key, $type = false)
 	{
-		if (is_int($key))
+		if (is_int($key) && $type)
 		{
-			
+			if (preg_match('/author:(?<author>.*)/', $type, $matches))
+			{
+				/**
+				 * @todo Add this!
+				 */
+			}
+			else
+			{
+				$statement = $this->db->query('SELECT * FROM ' . $this->config['table'] . ' ORDER BY ' . $type . ' ASC LIMIT 0, ' . $key);
+				$statement = $statement->fetchAll(\PDO::FETCH_OBJ);
+				return $statement;
+			}
 		}
 		else
 		{
-			$statement = $this->db->prepare('SELECT url FROM ' . $this->config['table'] . ' WHERE s_key = ?');
+			$statement = $this->prepared;
 			$statement->execute(array($key));
 			$statement = $statement->fetchObject();
 			return $statement->url;
@@ -53,6 +67,9 @@ class Shortener
 	
 	public function submit($url)
 	{
+		/**
+		 * @todo Validate URL
+		 */
 		if (!$this->config['unique'])
 		{
 			$statement = $this->db->prepare('SELECT s_key FROM ' . $this->config['table'] . ' WHERE url = ?');
@@ -65,7 +82,7 @@ class Shortener
 		}
 		
 		/**
-		 * @todo Improve random string - there are other valid URl chars!
+		 * @todo Improve random string - there are other valid URL chars!
 		 */
 		$uniq_key = true;
 		$statement = $this->db->prepare('SELECT id FROM ' . $this->config['table'] . ' WHERE s_key = ?');
