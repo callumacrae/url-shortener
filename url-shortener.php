@@ -65,11 +65,12 @@ class Shortener
 	{
 		if (is_int($key) && $type)
 		{
-			if (preg_match('/(/<searchfor>.*):(?<author>.*)/', $type, $matches))
+			if (preg_match('/(?<item>.*):(?<value>.*)/', $type, $matches))
 			{
-				/**
-				 * @todo Add this!
-				 */
+				$statement = $this->db->prepare('SELECT * FROM ' . $this->config['table'] . ' WHERE ' . $matches['item'] . ' = ? LIMIT 0, ' . $key);
+				$statement->execute(array($matches['value']));
+				$statement = $statement->fetchAll(\PDO::FETCH_OBJ);
+				return $statement;
 			}
 			else
 			{
